@@ -153,6 +153,15 @@ Next stage → metrics dashboard (Grafana + Prometheus).
 
 
 
+---
+
+📄 **Stage Reports**
+- [Stage 1 Report → Secure RPC Deployment](./Stage-1_Report.md)
+- *(Upcoming)* Stage 2 → Automation & Monitoring (Grafana + Prometheus)
+
+
+
+
 
 
 
