@@ -159,6 +159,14 @@ Next stage → metrics dashboard (Grafana + Prometheus).
 - [Stage 1 Report → Secure RPC Deployment](./Stage-1_Report.md)
 - *(Upcoming)* Stage 2 → Automation & Monitoring (Grafana + Prometheus)
 
+---
+
+### 🧭 Progress Roadmap
+
+- ✅ [Stage 1 — RPC & Automation Setup](./Stage-1_Report.md)
+- 🚀 [Stage 2 — Monitoring & Infra Reliability](./Stage-2_Report.md)
+- 🔜 Stage 3 — Public Dashboards + Validator Simulations
+
 
 
 
