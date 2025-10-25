@@ -45,4 +45,14 @@
 This repository is a living log of my work as an independent testnet explorer and infra operator —  
 documenting real setups, failures, and achievements on the road to Rank S across the Titan ecosystem.
 
-Follow updates on [Twitter @02Tolik02](https://twitter.com/02Tolik02)
+
+
+---
+
+## 🏗 Built for OpenBuild · Monad Path to Rank S
+Maintained by [@02Tolik02](https://twitter.com/02Tolik02) · [Asplana92](https://github.com/Asplana92)
+
+> 🌐 Documenting my Web3 Infra Builder journey —  
+> from running devnets to automating RPCs and building trust in decentralized infra.
+
+**#Monad #OpenBuild #Web3Infra #RankS #DevOps #Asplana92**
