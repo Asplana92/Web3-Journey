@@ -55,7 +55,9 @@ Server Load graph (1 m avg)
 Datasource: Prometheus → UID PROM_DS
 Folder: Monad / Monad Overview
 
-🖼 Screenshot
+🖼 Screenshot 
+![Monad Grafana Dashboard](../images/monad.png)
+
 
 🧠 Key Takeaways
 
