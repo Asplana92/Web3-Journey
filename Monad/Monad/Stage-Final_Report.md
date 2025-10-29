@@ -128,10 +128,15 @@ Add Monad Stage Final Report (Monitoring & Automation)
 
 ---
 
-### 🌐 Connect
+---
 
-**Follow the journey:**  
-[🐦 Twitter](https://twitter.com/02Tolik02) · [💬 Discord](https://discord.gg/monad) · [💻 GitHub](https://github.com/Asplana92)
+**🌐 Follow the Journey**
 
-> _Monad Path to Rank S — Completed October 2025_  
-> _by asplana92 · Web3 Infra Builder_
+🐦 [Twitter](https://twitter.com/02Tolik02)  
+💬 Discord: `tolik_iarik`  
+📁 [GitHub](https://github.com/Asplana92/Web3-Journey)
+
+---
+
+_Monad Path to Rank S — Completed October 2025_  
+_by asplana92 · Web3 Infra Builder_
