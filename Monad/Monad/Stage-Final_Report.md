@@ -130,13 +130,21 @@ Add Monad Stage Final Report (Monitoring & Automation)
 
 ---
 
-**🌐 Follow the Journey**
+🌐 Follow the Journey
 
-🐦 [Twitter](https://twitter.com/02Tolik02)  
-💬 Discord: `tolik_iarik`  
-📁 [GitHub](https://github.com/Asplana92/Web3-Journey)
 
----
+🧩 Monad Path to Rank S — Final Stage
 
-_Monad Path to Rank S — Completed October 2025_  
-_by asplana92 · Web3 Infra Builder_
+✅ Infrastructure fully operational and automated  
+📊 Monitoring: Prometheus + Grafana  
+🚨 Alerts: Discord integration active  
+🔗 RPC: [monad.skandicescape.online](https://monad.skandicescape.online)  
+📈 Dashboard: [grafana.skandicescape.online](https://grafana.skandicescape.online)
+
+> The Monad infrastructure is stable, secure, and fully monitored —  
+> marking the completion of the Monad Path to Rank S journey.
+
+— **asplana92 | Web3 Infra Builder**
+
+🐦 [Twitter](https://twitter.com/02Tolik02) | 📁 [GitHub](https://github.com/Asplana92/Web3-Journey)
+
