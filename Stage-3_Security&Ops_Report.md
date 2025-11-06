@@ -29,4 +29,10 @@ The goal: introduce DevOps + security practices into the Bootcamp, extending it 
 This stage marks the first **public contribution** to the official OpenBuild ecosystem.
 The proposal demonstrates applied DevOps skills and security focus, moving the Monad Path to Rank S journey forward.
 
+---
+### Evidence Snapshot
+![Fail2Ban SSHD Status](https://github.com/user-attachments/assets/bc8e093f-2ab9-4de2-b82d-9a85d79cb7b2)
+_Fail2Ban: 9265 failed SSH attempts, 53 active bans (auto-protection enabled)._
+
+
 — _asplana92 | Web3 Infra Builder_
