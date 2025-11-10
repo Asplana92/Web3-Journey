@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  monad:
+    image: "${MONAD_IMAGE}"
+    container_name: monad-node
+    restart: unless-stopped
+    env_file:
+      - .env
+    command: >
+      monad
+      --network ${MONAD_NETWORK}
+      --data-dir /var/lib/monad
+      ${EXTRA_ARGS}
+    volumes:
+      - ${DATA_DIR}:/var/lib/monad
+    ports:
+      - "${RPC_PORT}:${RPC_PORT}"
+      - "${P2P_PORT}:${P2P_PORT}/tcp"
+      - "${P2P_PORT}:${P2P_PORT}/udp"
+      - "${METRICS_PORT}:${METRICS_PORT}"
