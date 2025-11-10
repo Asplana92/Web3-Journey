@@ -19,3 +19,4 @@ nano .env
 
 # Launch the node
 docker compose up -d
+
