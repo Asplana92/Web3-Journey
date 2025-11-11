@@ -1,3 +1,7 @@
+🌐 [English](./Deploying_on_Monad.md) | [Русский](./Deploying_on_Monad_ru.md) | Română | [Deutsch](./Deploying_on_Monad_de.md) | [Norsk](./Deploying_on_Monad_no.md)
+
+
+
 # Развёртывание ноды Monad
 
 В этом руководстве объясняется, как развернуть ноду Monad с использованием Docker.  
