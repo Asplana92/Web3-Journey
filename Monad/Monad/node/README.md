@@ -36,3 +36,17 @@ docker compose -f quickstart-compose.yaml up -d
 ✅ This version uses the official monad-xyz/monad-bft image
 🚫 No deprecated categoryxyz/* images
 💡 Safe for Testnet or DevNet setups out of the box
+
+## 🧩 Prebuilt Compose (Recommended for Testnet)
+
+For a ready-to-use Testnet setup, use the **compose.prebuilt.yaml** file — it’s based on the official `monad-xyz/monad-bft` image and fully configured for production-like environments.
+
+### Quick Run
+
+```bash
+git clone https://github.com/Asplana92/Web3-Journey.git
+cd Web3-Journey/Monad/Monad/node
+cp .env.example .env
+docker compose -f compose.prebuilt.yaml up -d
+This setup runs a stable Monad Testnet node out of the box.
+No private configs or keys — fully public and clean template.
