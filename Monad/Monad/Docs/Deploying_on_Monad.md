@@ -40,27 +40,27 @@ DATA_DIR=/opt/monad
 
 
 4. Start the node
+
+```bash
 docker compose up -d
-
-
+```
 
 Check node status:
+
+```bash
 curl http://127.0.0.1:26657/status
+```
 
 If the output returns block information, your node is running successfully.
 
+---
 
+## 5. Monitoring and maintenance
+- Integrate Prometheus + Grafana for metrics  
+- Add a systemd unit for auto-restart  
+- Regularly update the Docker image to stay synced with Testnet releases  
 
+---
 
-5. Monitoring and maintenance
-
-Integrate Prometheus + Grafana for metrics
-
-Add a systemd unit for auto-restart
-
-Regularly update the Docker image to stay synced with Testnet releases
-
-
-
-Author: Tolik | Infra Builder
+**Author:** Tolik | Infra Builder  
 Community contribution for Monad documentation
