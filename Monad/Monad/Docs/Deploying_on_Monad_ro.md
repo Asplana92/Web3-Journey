@@ -1,6 +1,4 @@
-<p align="right">
 🌐 [English](./Deploying_on_Monad.md) | [Русский](./Deploying_on_Monad_ru.md) | Română | [Deutsch](./Deploying_on_Monad_de.md) | [Norsk](./Deploying_on_Monad_no.md)
-</p>
 
 
 # Implementarea unui nod Monad
