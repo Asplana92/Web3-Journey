@@ -1,0 +1,26 @@
+version: "3.8"
+
+services:
+  monad:
+    image: monad-xyz/monad-bft:latest
+    container_name: monad-node
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        soft: 65535
+        hard: 65535
+    ports:
+      - "26656:26656"
+      - "26657:26657"
+      - "8080:8080"
+    volumes:
+      - ./data:/home/monad/.monad
+      - ./logs:/home/monad/logs
+    environment:
+      - MONAD_CHAIN_ID=monad-testnet
+      - MONAD_RPC_PORT=8080
+    command: >
+      /usr/local/bin/monad
+      start
+      --chain-id monad-testnet
+      --home /home/monad/.monad
