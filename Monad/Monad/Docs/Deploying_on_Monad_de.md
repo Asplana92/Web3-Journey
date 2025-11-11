@@ -1,3 +1,7 @@
+🌐 [English](./Deploying_on_Monad.md) | [Русский](./Deploying_on_Monad_ru.md) | Română | [Deutsch](./Deploying_on_Monad_de.md) | [Norsk](./Deploying_on_Monad_no.md)
+
+
+
 # Bereitstellung eines Monad-Knotens
 
 > Aktualisierte Version des Handbuchs, die die neuesten Änderungen an Docker Compose und der Testnet-Konfiguration enthält.
