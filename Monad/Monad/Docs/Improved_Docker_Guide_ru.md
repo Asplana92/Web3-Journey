@@ -112,6 +112,7 @@ ss -ltnp | grep ${P2P_PORT}
 curl -s http://127.0.0.1:${HTTP_RPC_PORT}/ | head
 
 
+```markdown
 ## 8) Мониторинг
 
 Запустите **Prometheus**, **Grafana** и **Node Exporter**,  
@@ -132,3 +133,4 @@ curl -s http://127.0.0.1:${HTTP_RPC_PORT}/ | head
 Адаптировано из официального Docker-репозитория  
 **monad-xyz/monad-bft**  
 для удобного развертывания ноды Monad и использования сообществом.
+```
