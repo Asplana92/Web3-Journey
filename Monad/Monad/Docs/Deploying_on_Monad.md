@@ -14,6 +14,7 @@ It is suitable for developers, RPC operators, and community builders joining the
 ---
 
 ## 2. Install Docker
+
 ```bash
 sudo apt update && sudo apt install -y ca-certificates curl gnupg
 sudo install -m 0755 -d /etc/apt/keyrings
@@ -26,34 +27,40 @@ sudo apt update
 sudo apt install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
 
 
+
 3. Configuration
 
 Create a working directory and .env file:
-
 MONAD_IMAGE=monadxyz/monad-node:latest
 NETWORK=testnet
 RPC_PORT=26657
 P2P_PORT=26656
 DATA_DIR=/opt/monad
 
+
+
 4. Start the node
 docker compose up -d
 
+
+
 Check node status:
 curl http://127.0.0.1:26657/status
+
 If the output returns block information, your node is running successfully.
 
 
 
----
 
-## 5. Monitoring and maintenance
-- Integrate Prometheus + Grafana for metrics  
-- Add a systemd unit for auto-restart  
-- Regularly update the Docker image to stay synced with Testnet releases
+5. Monitoring and maintenance
 
----
+Integrate Prometheus + Grafana for metrics
 
-**Author:** Tolik | Infra Builder  
+Add a systemd unit for auto-restart
+
+Regularly update the Docker image to stay synced with Testnet releases
+
+
+
+Author: Tolik | Infra Builder
 Community contribution for Monad documentation
-
