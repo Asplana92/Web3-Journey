@@ -43,6 +43,8 @@ Check node status:
 curl http://127.0.0.1:26657/status
 If the output returns block information, your node is running successfully.
 
+
+
 ---
 
 ## 5. Monitoring and maintenance
