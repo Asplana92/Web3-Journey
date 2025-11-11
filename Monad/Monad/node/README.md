@@ -50,3 +50,15 @@ cp .env.example .env
 docker compose -f compose.prebuilt.yaml up -d
 This setup runs a stable Monad Testnet node out of the box.
 No private configs or keys — fully public and clean template.
+
+---
+
+### 🧩 Node Reset (if needed)
+
+If your node ever gets stuck or fails to sync properly, you can safely reset it using the official Monad documentation:
+
+👉 [Hard Reset Instructions](https://docs.monad.xyz/node-ops/node-reset/hard-reset)
+
+This guide explains how to clear local data and resync your node from a clean state.
+It’s the recommended method for both Testnet and DevNet environments.
+
