@@ -1,0 +1,435 @@
+Gonka Network - Stage 2 Deployment Report
+Author: Asplana92
+Date: November 11–16, 2025
+Status: 🟢 Operational – Awaiting Epoch Assignment
+
+
+📋 Table of Contents
+
+1. Summary
+2. Stage 1 Resolution
+3. System Architecture
+4. Deployment Steps
+5. Current Status
+6. Lessons Learned
+7. Acknowledgments
+
+
+
+🎯 Summary
+
+What was accomplished:
+✅ Resolved Docker image sync issue (Stage 1)
+✅ Deployed Gonka Network (Chain Node + GPU Node)
+✅ Established Tailscale VPN between servers
+✅ Registered hardware on-chain
+✅ Built an autonomous self-healing system
+⏳ Currently awaiting epoch assignment
+
+Time: ~26 hours total (8–12 hours with this guide)
+Cost: ≈ $293.5/month (Vast.ai $280 + Hetzner $13.5)
+Related Issues: #431 ✅ · #438 📝
+
+
+📨 Stage 1 Resolution
+The Problem
+
+Docker image inferenced:0.2.4 couldn't sync from genesis:
+Error: AppHash mismatch
+Error: Trust period expired (77 days)
+Result: New nodes blocked from joining
+
+The Solution (Gonka Team)
+“Version v0.2.4 can be used to load from snapshots after v0.2.4. The quickstart instruction deploys from snapshot automatically.”
+Key insight: Use snapshot-based deployment, not genesis sync.
+Official method:
+   cd ~/gonka/deploy/join
+   docker compose up -d  # Auto-loads snapshot ✅
+Impact: Turned a 12-hour blocker into a <1 hour fix.
+
+
+
+
+🏗️ System Architecture
+
+┌──────────────────────────────┐         ┌──────────────────────────┐
+│  HETZNER (xxx.xxx.xxx.xxx)   │◄───────►│  VAST.AI (RTX 4090)      │
+│                              │ Tailscale│                         │
+│  • Chain Node (synced)       │   VPN   │  • llama-server (8081)   │
+│  • API (warm-key)            │  30ms   │  • mlnode_adapter (8085) │
+│  • Monitoring (10min)        │         │  • Watchdog (5min)       │
+└──────────────────────────────┘         └──────────────────────────┘
+              │
+              ▼
+       Gonka Network
+
+Components:
+   Chain Node: blockchain sync (e.g. block 1,304,577)
+   API: hardware registration & orchestration
+   GPU Node: Qwen/Qwen2.5-7B-Instruct inference
+   Tailscale: secure VPN between Hetzner and Vast.ai (≈30 ms latency)
+
+
+
+
+
+🚀 Deployment Steps
+1. Chain Node (Hetzner)
+
+Clean and prepare:
+    cd ~/gonka/deploy/join
+    docker compose down
+    sudo rm -rf .inference/data
+    sudo mkdir -p .inference/data
+
+Verify genesis:
+    curl -L https://raw.githubusercontent.com/gonka-ai/gonka/main/genesis/genesis.json -o genesis.json
+    sha256sum genesis.json
+  # Expected: 47ab596779fce181882bfcc62c7588947a76ac9d0f49d87cb3a6336ae59ff210
+    sudo cp genesis.json .inference/config/genesis.json
+
+Configure state sync:
+cat > config.env << 'EOF'
+SEED_NODE_RPC_URL=http://node2.gonka.ai:26657
+SEED_NODE_P2P_URL=tcp://node2.gonka.ai:5000
+SYNC_WITH_SNAPSHOTS=true
+TRUSTED_BLOCK_PERIOD=2000
+EOF
+
+Launch:
+   export $(grep -v '^#' config.env | xargs)
+docker compose up -d
+
+Verify sync:
+   curl -s localhost:26657/status | jq '.result.sync_info'
+# catching_up: false ✅
+
+
+
+
+2. Keys & Registration
+
+Generate warm key:
+   docker exec -it node bash
+   inferenced keys add warm-key --keyring-backend file
+ # Address example: gonka10cpp44unq8w2danwsm7spqp4senj3khzgejel6
+
+Register participant:
+   docker exec -it api bash
+inferenced tx inference register-participant \
+  --from warm-key \
+  --chain-id gonka-mainnet \
+  --fees 1000stake \
+  --yes
+
+Grant permissions (from cold key on MacBook):
+    inferenced tx authz grant \
+  gonka10cpp44unq8w2danwsm7spqp4senj3khzgejel6 \
+  generic --msg-type /gonka.inference.MsgRegisterHardware \
+  --from cold-key \
+  --fees 5000stake \
+  --yes
+
+
+
+
+3. GPU Node (Vast.ai)
+
+Install Tailscale:
+   curl -fsSL https://tailscale.com/install.sh | sh
+   tailscale up
+ 
+Start llama-server:# Note IP: 100.xxx.xxx.xx
+    llama-server \
+  --model /workspace/models/qwen2.5-7b-instruct-q6_k.gguf \
+  --ctx-size 8192 \
+  --n-gpu-layers 99 \
+  --host 0.0.0.0 \
+  --port 8081 &
+
+Create mlnode_adapter:
+   # /workspace/mlnode_adapter.py (simplified)
+  from fastapi import FastAPI
+  import httpx
+
+  app = FastAPI()
+
+  @app.get("/health")
+  async def health():
+    return {"status": "ok", "models": ["Qwen/Qwen2.5-7B-Instruct"]}
+
+  @app.post("/v3.0.8/api/v1/infer")
+  async def infer(request: dict):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(
+            "http://127.0.0.1:8081/completion",
+            json={"prompt": request["prompt"]}
+        )
+        return {"text": response.json()["content"]}
+
+Run adapter:
+   uvicorn mlnode_adapter:app --host 0.0.0.0 --port 8085
+
+Watchdog script:
+     cat > /workspace/watchdog.sh << 'EOF'
+    #!/bin/bash
+   pgrep -f "llama-server"      >/dev/null || /workspace/start-llama.sh &
+   pgrep -f "mlnode_adapter.py" >/dev/null || python /workspace/mlnode_adapter.py &
+   tailscale status >/dev/null 2>&1 || tailscale up &
+   EOF
+
+   chmod +x /workspace/watchdog.sh
+   crontab -e  # Add:
+   # */5 * * * * /workspace/watchdog.sh
+
+
+
+4. Hardware Registration
+
+Configure node:
+     [{
+  "inference": {
+    "type": "inference",
+    "host": "inference",
+    "port": "8085",
+    "models": {
+      "Qwen/Qwen2.5-7B-Instruct": { "args": [] }
+    }
+  }
+}]
+
+Fix keyring access (API must see warm key):
+    docker cp node:/root/.inference/keyring-file api:/root/.inference/
+    docker compose restart api
+
+Verify registration:
+    inferenced query inference hardware-nodes-all | grep gonka10cpp44
+   # Shows registered hardware ✅
+
+
+
+✅ Current Status
+System Health
+| Component    | Status       | Check Interval | Recovery |
+| ------------ | ------------ | -------------- | -------- |
+| Chain Node   | 🟢 Synced    | 30s            | Docker   |
+| API          | 🟢 Active    | 60s            | Docker   |
+| llama-server | 🟢 Ready     | 5min           | Watchdog |
+| Tailscale    | 🟢 Connected | 5min           | Watchdog |
+
+
+Self-healing coverage: ≈95% automated.
+Epoch Assignment
+Current: Epoch 84 – not assigned (expected behavior in this scenario)
+      Status: STOPPED
+Reason:
+  • Random selection happens at epoch start
+  • Hardware was registered after epoch 84 began
+Next:
+  • Epoch 85+ – random chance each epoch
+
+Why STOPPED is OK:
+   ✅ Hardware is registered
+   ✅ Configuration is valid
+   ✅ System is operational
+   ⏳ Waiting for random selection by the network
+
+Verification
+       # Sync status
+curl -s localhost:26657/status | jq '.result.sync_info.catching_up'
+# false ✅
+
+# ML node (via Tailscale IP)
+curl http://100.xxx.xxx.xx:8085/health
+# {"status":"ok","models":["Qwen/Qwen2.5-7B-Instruct"]} ✅
+
+# Hardware
+inferenced query inference hardware-nodes-all | grep gonka10cpp44
+# Shows participant and hardware ✅
+
+
+
+
+
+🎓 Lessons Learned
+Key Insights
+Use Snapshot Deployment
+   v0.2.4 requires snapshots, not genesis sync
+   Official docker-compose handles this automatically
+
+Tailscale Fixes Networking Limits
+   Vast.ai blocks many inbound ports
+   Tailscale provides a stable encrypted VPN mesh
+
+Separate Keys for Security
+   Cold key (offline) for governance and high-value ops
+   Warm key (server) for daily operations
+   authz enables safe delegation
+
+Automation Prevents Downtime
+   Watchdog scripts auto-restart services
+   Docker healthchecks enable automatic recovery
+   Monitoring detects issues early
+
+Epoch Assignment is Random
+   Not all nodes are selected each epoch
+   Register before epoch start to maximize chances
+   STOPPED status ≠ misconfiguration
+
+Best Practices
+   ✅ Document while building – capture commands and errors immediately
+   ✅ Test each component early – chain, API, ML node, VPN
+   ✅ Use exact model IDs – governance matching is strict
+   ✅ Monitor continuously – “automated” ≠ “forget about it”
+   ✅ Leverage community support – GitHub issues and Discord save time
+
+
+
+
+
+🙏 Acknowledgments
+Gonka Team 🌟
+For resolving Issue #431:
+Their response turned a 12-hour blocker into a working deployment:
+
+“The quickstart instruction deploys from snapshot automatically.”
+
+Impact:
+   Time saved: 3–5 days of debugging
+   Success rate: 0% → 100%
+   Enabled:
+      Full deployment
+      Discovery and reporting of Issue #438
+      This deployment guide
+
+Thank you — this setup would not exist without that support.
+
+Community & Tools
+   Gonka Community: Discord + GitHub support
+   Vast.ai: reliable GPU instances
+   Hetzner: stable VPS hosting
+   Tailscale: zero-config VPN networking
+
+
+
+
+Health Checks
+     # Sync
+   curl -s localhost:26657/status | jq '.result.sync_info'
+    # ML node
+   curl http://100.xxx.xxx.xx:8085/health
+    # Hardware
+   inferenced query inference hardware-nodes-all | grep YOUR_ADDRESS
+
+Troubleshooting
+
+        # Logs
+     docker logs node --tail 100
+     docker logs api --tail 100
+
+        # Restart
+     docker compose restart node api
+
+        # Tailscale
+     tailscale status
+     ping 100.xxx.xxx.xx
+
+
+
+
+
+🔗 Resources
+   GitHub: https://github.com/gonka-ai/gonka
+   Issue #431: Docker sync (✅ Resolved)
+   Issue #438: Model matching (📝 Bounty submission)
+   Quick-start: https://gonka.ai/host/quickstart/
+
+
+
+
+
+📈 Next Steps
+
+     Immediate:
+ Monitor Epoch 85 assignment
+Track Issue #438 for bounty decision
+
+     Short-term:
+Automation implemented
+Optimize GPU usage
+Add monitoring dashboard (Grafana/Prometheus, etc.)
+    Long-term:
+Evaluate additional models
+Calculate ROI after first active epoch
+Consider scaling to multiple nodes / GPUs
+
+
+
+Status: 🟢 Production Ready
+Last Updated: November 16, 2025
+Participant: gonka10cpp44unq8w2danwsm7spqp4senj3khzgejel6
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
