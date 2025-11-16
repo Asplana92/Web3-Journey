@@ -1,263 +1,174 @@
-Gonka Network — Full Technical Deployment Report (Stage 1 + Stage 2)
+Gonka Network — Full Technical Deployment Report
+Stage 1 + Stage 2 Infrastructure Journey
 
-Infrastructure & Troubleshooting Documentation
-Author: Infra Builder (Asplana92)
-Date: 2025
-Status: Operational – Awaiting Epoch Assignment
+Status: Operational · Awaiting Epoch Assignment
+Author: Infra Builder
 
+1. Executive Summary
 
+This document provides a complete and consolidated technical overview of the entire Gonka infrastructure journey — from the initial deployment attempts, through system debugging and issue resolution (Stage 1), to a fully functioning inference node architecture (Stage 2). It reflects the full lifecycle of building a decentralized ML node across heterogeneous environments (Hetzner, Vast.ai) with secure networking, GPU inference, and on-chain hardware registration.
 
+The report is written from an infrastructure engineer’s perspective, focusing on correctness, reproducibility, clarity, and operational best practices.
 
-📌 Executive Summary
+2. Background
 
-This document provides a full technical record of the entire deployment journey inside the Gonka Network, including:
+The goal of this deployment was to:
 
-Stage 1: Investigation & Root Cause Analysis
+Join the Gonka Network as a participant
 
-Stage 2: Deployment, GPU Integration, Tailscale Networking, Hardware Registration
+Deploy both the chain node and GPU inference node
 
-Issue Resolution (#431 & #438)
+Resolve observed synchronization issues
 
-Architecture design (Chain Node + API + GPU Node)
+Register GPU hardware on-chain
 
-State Sync and Snapshot-based joining
+Create an autonomous, stable, and production-ready environment
 
-Automated failover / watchdog setup
+Document the process for other operators
 
-Full operational readiness validation
+During this journey, two critical issues were investigated:
 
-This report is written for technical audiences: infrastructure operators, network developers, and engineers reviewing system performance, edge cases, and contributions.
+Issue #431 — AppHash mismatch during genesis sync
 
-The goal of this document is to serve as a complete and reliable reference for how to:
+Issue #438 — Governance model ID mismatch during hardware registration
 
-diagnose network-level mismatches (AppHash mismatch, trust period issues)
+These investigations led to multiple contributions and direct improvements to the stability and documentation of the network.
 
-deploy inference nodes on decentralized accelerator networks
+3. Stage 1 — Initial Deployment & Issues
 
-work with isolated GPU environments (Vast.ai)
+First deployment attempts revealed several issues preventing the node from joining the network:
 
-securely manage key roles (cold/warm keys + authz)
-
-ensure zero-downtime inference service availability
-
-maintain correct and verifiable hardware registration
-
-This report contains no personal information and stays within the bounds of clean technical documentation.
-
-
-
-
-📘 Table of Contents
-
-Introduction
-
-Background & Motivation
-
-Initial Setup & Observed Issues (Stage 1)
-
-Root Cause Analysis (Stage 1)
-
-State Sync vs Genesis Sync
-
-Architecture Overview (Stage 2)
-
-Infrastructure Preparation (Servers, Networking, Keys)
-
-Chain Node Deployment
-
-API Node Configuration
-
-GPU Node Deployment (Vast.ai)
-
-Tailscale Networking Architecture
-
-Model Serving & Adapter Layer
-
-Hardware Registration Process
-
-Epoch Assignment Logic
-
-Validation & System Health
-
-Automation & Self-Healing Structure
-
-Investigation: Governance Model Mismatch (#438)
-
-Lessons Learned
-
-Recommendations for Operators
-
-Future Improvements
-
-Conclusion
-
-
-
-
-1. Introduction
-
-This report documents the complete infrastructure journey of deploying and validating a Gonka node environment. The Gonka Network involves a hybrid architecture: a consensus chain node, an API orchestration node, and a GPU inference node capable of serving LLM workloads.
-
-Throughout this process, multiple issues were identified, investigated, reproduced, and resolved. This report consolidates all findings and presents a clean, reproducible blueprint for future operators.
-
-
-
-
-2. Background & Motivation
-
-The deployment journey was motivated by:
-
-establishing a fully functional inference node on the Gonka Network
-
-contributing to network stability by resolving critical issues (#431, #438)
-
-documenting real-world scenarios encountered during decentralized ML operations
-
-building experience with snapshot-driven Tendermint-based networks
-
-integrating GPU computation via secure isolated environments
-
-
-
-
-3. Initial Setup & Observed Issues (Stage 1)
-
-The initial deployment attempt, based strictly on the legacy quickstart instructions, resulted in multiple immediate blockers:
-
-✔ AppHash mismatch on startup
+3.1 AppHash mismatch
 Error: AppHash mismatch
-Error: Expected X but got Y
+Expected X, got Y
 
-✔ Trust period expiration
-Trust period expired (77 days)
+3.2 Trust period expired
+trust period expired (77 days)
 
-✔ Node stuck at height ~0
+3.3 Genesis sync blocked
 
-No ability to re-sync from genesis.
+Chain node could not replay historical blocks due to extended chain age.
 
-✔ No automatic fallback mechanism
+3.4 API cannot initialize
 
-The compose file attempted genesis sync instead of snapshot loading.
+API relies on the chain node; with consensus blocked, the API layer never reaches operational state.
 
-✔ API failing to initialize
+These symptoms pointed to a deeper inconsistency between the chain state and the expected genesis replay behavior.
 
-Because chain node was stuck at mismatch.
+4. Stage 1 Root Cause Analysis
 
-The environment was clean (Hetzner VPS), meaning the root cause was not leftover data but upstream incompatibilities.
+The investigation confirmed:
 
+Root cause:
 
+Version v0.2.4 cannot join the network using genesis sync.
 
+This was validated directly by maintainers in Issue #431.
 
-4. Root Cause Analysis (Stage 1)
+Correct behavior:
 
-After thorough investigation:
+Nodes must join using snapshot sync, not genesis replay.
 
-Root Cause Identified:
+Snapshot-based state synchronization provides:
 
-v0.2.4 cannot sync from genesis due to historical state changes.
+a trusted block header
 
-This was confirmed by maintainers in Issue #431.
+a verified app hash
 
-Correct Behavior:
+a valid state snapshot
 
-Nodes on v0.2.4 must sync using snapshots, not genesis.
+significantly reduced sync time
 
-Why?
+compatibility with v0.2.4+
 
-The chain had progressed significantly beyond the point where genesis replay was viable. Trust periods were exceeded (~77 days), making historical light client verification impossible.
+Once this insight was applied, all previous blockers were resolved.
 
+5. Switching to Snapshot Sync
 
+After applying the correct method:
 
-
-5. State Sync vs Genesis Sync
-
-Key insight from Gonka engineers:
-
-“The quickstart instruction deploys from snapshot automatically.”
-
-This clarified that all new nodes must:
-
-download a state snapshot
-
-validate a trusted block
-
-sync forward
-
-rather than attempting to replay blocks from genesis.
-
-Once this was understood, the path forward became stable and reproducible.
+cd ~/gonka/deploy/join
+docker compose up -d
 
 
+The compose configuration automatically:
 
+downloads the appropriate snapshot
+
+loads a trusted block
+
+initializes the validator set
+
+syncs forward with SYNC_WITH_SNAPSHOTS=true
+
+This eliminated AppHash mismatch and trust period issues.
 
 6. Architecture Overview (Stage 2)
 
-The full production setup consists of:
+The final production setup consists of two independent machines linked via a secure Tailscale VPN:
 
-┌────────────────────────────────┐       ┌──────────────────────────────┐
-│    HETZNER VPS                 │◄─────►│     VAST.AI GPU INSTANCE     │
-│                                │ Tailscale VPN                        │
-│  • Chain Node (Tendermint)     │ 30 ms │ • llama-server               │
-│  • API Node (Gonka API)        │       │ • mlnode_adapter             │
-│  • Keyring (warm key)          │       │ • Watchdog cron              │
-└────────────────────────────────┘       └──────────────────────────────┘
-                │
-                ▼
-        Gonka Network — Inference Layer
+                 ┌───────────────────────────────┐
+                 │           HETZNER VPS          │
+                 │────────────────────────────────│
+                 │ • Chain Node (Tendermint)      │
+                 │ • API Node (Gonka API)         │
+                 │ • Warm Keyring                 │
+                 │ • Monitoring / Health Checks   │
+                 └───────────────▲────────────────┘
+                                 │  Tailscale VPN (~30 ms)
+                                 ▼
+        ┌────────────────────────────────────────────────────────┐
+        │                      VAST.AI GPU INSTANCE              │
+        │────────────────────────────────────────────────────────│
+        │ • llama-server (Qwen2.5-7B)                            │
+        │ • mlnode_adapter (Gonka-compatible API)                │
+        │ • Watchdog (auto-recovery)                             │
+        │ • Secure private networking via Tailscale              │
+        └───────────────────────────────▲────────────────────────┘
+                                        │
+                                        ▼
+                         Gonka Network — Inference Layer
 
-
-The architecture follows a clean separation of concerns:
-
+Component Responsibilities
 Component	Responsibility
-Chain Node	consensus, state machine, TX processing
-API Node	hardware registration, meta-orchestration
-GPU Node	LLM inference backend
-Tailscale	secure encrypted communication
-Watchdog	service liveness and auto-recovery
+Chain Node	Consensus, state machine, block execution
+API Node	Participant/hardware registration, inference routing
+GPU Node	High-performance ML inference (LLM)
+Tailscale	Secure private transport
+Watchdog	Automated recovery
 
+The architecture ensures clean isolation, reliability, and predictable performance.
 
 
 7. Infrastructure Preparation
-Servers
+7.1 Server roles
 
-Hetzner VPS used for Chain + API
+Hetzner: chain + API
 
-Vast.ai GPU instance (RTX-class GPU) for inference workloads
+Vast.ai: GPU inference
 
-Key separation
+7.2 Key management
 
-Cold Key (offline): governance transactions, grants, sensitive ops
+Cold key (offline): governance transactions, authz grants
 
-Warm Key (server): operational tasks
+Warm key (server): operational tasks
 
-Authz: delegated hardware-registration permissions
+Authz system: delegated permission to submit hardware registration TXs
 
-This follow industry best practices for validator/inference networks.
-
-
+This aligns with best practices for decentralized networks.
 
 
 8. Chain Node Deployment
-
-After applying snapshot-based workflow:
-
-Key steps
+Clean start
 cd ~/gonka/deploy/join
 docker compose down
 rm -rf .inference/data
 mkdir .inference/data
+
+Start with snapshot sync
 docker compose up -d
 
-
-Compose auto-detected:
-
-SYNC_WITH_SNAPSHOTS=true
-
-TRUSTED_BLOCK_PERIOD=2000
-
-remote seed + state provider
-
-Validation
+Verification
 curl -s localhost:26657/status | jq '.result.sync_info.catching_up'
 # false
 
@@ -265,288 +176,194 @@ curl -s localhost:26657/status | jq '.result.sync_info.catching_up'
 Chain node fully synced.
 
 
+9. API Node Setup
 
+The API container requires access to the warm keyring stored in the chain node.
 
-9. API Node Configuration
-
-The API node manages:
-
-participant registration
-
-hardware registration
-
-model lookup
-
-request routing
-
-Key integration task
-
-The API must have the same warm-key keyring as the chain node.
-
-Transferred securely:
-
+Fix keyring access
 docker cp node:/root/.inference/keyring-file api:/root/.inference/
 docker compose restart api
 
 
-Once corrected, API was able to submit authorized messages.
+With the correct keyring, the API node can:
+
+register the participant
+
+submit hardware registration
+
+respond to model queries
 
 
+10. GPU Node (Vast.ai)
 
+The GPU node runs the inference backend:
 
-10. GPU Node Deployment (Vast.ai)
-
-The GPU node runs:
-
-llama-server
-
-adapter layer for Gonka API compatibility
-
-secure Tailscale tunnel
-
-monitoring + watchdog automation
-
-LLM Server
+10.1 LLM server
 llama-server \
   --model qwen2.5-7b-instruct-q6_k.gguf \
   --ctx-size 8192 \
   --n-gpu-layers 99 \
   --host 0.0.0.0 \
   --port 8081
+  
+10.2 Adapter layer
 
-Adapter Layer
+A FastAPI-based adapter exposes Gonka-compatible endpoints.
 
-Designed to translate Gonka inference requests to llama.cpp format.
+Responsibilities:
 
-Supports:
+/health for model discovery
 
-health checks
+/infer for text generation
 
-text generation endpoint
-
-error propagation
-
-
+translation of Gonka requests → llama.cpp prompts
 
 
-11. Tailscale Networking Architecture
+11. Tailscale Networking
 
-Because Vast.ai restricts inbound networking, a VPN mesh was essential.
+Because Vast.ai blocks inbound ports, a private VPN mesh is required.
 
-Benefits:
-
-end-to-end encrypted transport
-
-stable low-latency connection (≈30ms)
-
-no public port exposure
-
-simple service discovery
-
-Setup:
+Installation
 curl -fsSL https://tailscale.com/install.sh | sh
 tailscale up
 
+Benefits
+
+encrypted tunnel
+
+private addressing
+
+no public ports
+
+stable low-latency transport (~30ms)
 
 
+12. Hardware Registration
+Steps
 
-12. Model Serving & Adapter Layer
+Register participant (warm key)
 
-The adapter interacts with llama-server using FastAPI + HTTPX.
+Authorize hardware registration via cold key
 
-Example flow:
+Submit registration through API
 
-API sends /infer request
+Confirm on-chain
 
-Adapter reformats prompt
-
-llama-server generates output
-
-Adapter returns normalized JSON result
-
-The adapter also reports available models via /health.
-
-
-
-
-13. Hardware Registration Process
-
-Steps:
-
-Participant registration
-
-authz delegation from cold key
-
-Hardware registration message submission
-
-API confirms active hardware entry
-
-Verification:
+Verification
 inferenced query inference hardware-nodes-all
 
 
-Hardware appears with correct model definition.
+Hardware appears with correct configuration.
 
 
+13. Epoch Assignment Logic
 
+Selection of active hardware is randomized per epoch.
 
-14. Epoch Assignment Logic
+Nodes that register after the epoch starts:
 
-Gonka performs random hardware selection per epoch.
+will show STOPPED
 
-If the node registers after the epoch starts → it will not be selected until next epoch.
+will be assigned in future epochs
 
-STOPPED status means:
+do not indicate misconfiguration
 
-hardware registered
+This behavior is expected.
 
-waiting for next epoch
 
-no errors in configuration
+14. Health & Validation
 
-This is expected behavior.
+All components confirmed operational:
 
+Component	Status
+Chain Node	Synced
+API Node	Active
+GPU Node	Serving inference
+Tailscale	Connected
+Hardware	Registered
 
+The system is ready for active inference when selected.
 
 
-15. Validation & System Health
+15. Automation / Watchdog
 
-All components validated:
+A lightweight watchdog ensures service recovery:
 
-Component	Status	Check
-Chain Node	✓ Synced	RPC /status
-API Node	✓ Active	health endpoint
-llama-server	✓ Serving	adapter health
-Tailscale	✓ Connected	ping, status
-Hardware	✓ Registered	on-chain query
+Restarts llama-server if stopped
 
-Full system is ready for inference epochs.
+Restarts adapter
 
+Reconnects Tailscale if disconnected
 
+This guarantees high uptime without heavy orchestration.
 
 
-16. Automation & Self-Healing Structure
+16. Investigation: Issue #438
 
-A lightweight watchdog ensures availability:
+The governance model ID mismatch issue was reproduced and diagnosed.
+Cause: governance expects exact string match for model IDs.
 
-Checks:
+Outcome:
 
-llama-server
+clarified expected naming
 
-adapter
+improved documentation accuracy
 
-tailscale
+validated adapter model behavior
 
-Recovery:
 
-restart server if process missing
+17. Lessons Learned
+Technical
 
-re-authenticate Tailscale if disconnected
+Snapshot sync is mandatory for older Tendermint networks
 
-This ensures high uptime with minimal overhead.
+VPN tunneling is essential on GPU hosts
 
+Keyring synchronization is critical for multi-service setups
 
+ML adapter must strictly follow governance model IDs
 
+Operational
 
-17. Investigation: Issue #438 (Governance Model Mismatch)
+test each component independently
 
-During registration, a mismatch occurred:
+automate essential recovery paths
 
-user-provided model name
-vs
+monitor model endpoints
 
-governance-defined canonical model name
+document all changes continuously
 
-This revealed a validation rule that requires exact string match.
 
-Contributing this issue improved transparency around:
+18. Recommendations
 
-model naming
+Always use snapshots with v0.2.4+
 
-governance schema
+Use Tailscale for GPU environments
 
-adapter compatibility
+Use FastAPI/uvicorn for lightweight adapters
 
-Issue submitted with reproduction steps and fix proposal.
+Keep warm and cold keys separate
 
+Deploy watchdogs for inference workloads
 
 
+19. Future Improvements
 
-18. Lessons Learned
-Key Technical Takeaways
+Prometheus/Grafana integration
 
-Snapshot syncing is mandatory for older Tendermint networks.
-
-State mismatch errors are often caused by outdated genesis.
-
-GPU platforms require VPN tunneling due to port restrictions.
-
-Keyring synchronization is essential for multi-container setups.
-
-Monitoring + watchdog dramatically improves stability.
-
-Best Operational Practices
-
-Keep cold keys offline
-
-Automate minimal failure recovery
-
-Validate each component independently before composition
-
-Always confirm expected model names from governance layer
-
-
-
-
-19. Recommendations for Operators
-
-Prefer snapshot sync > genesis sync
-
-Use Tailscale or similar mesh networks
-
-Log adapter output to identify LLM-level issues
-
-Separate infrastructure concerns by node type
-
-Use cron-based watchdogs for GPU environments
-
-Test inference endpoints locally before registration
-
-
-
-
-20. Future Improvements
-
-Potential enhancements:
-
-Full Prometheus/Grafana metrics integration
-
-Endpoint latency optimization
-
-Model batching or streaming for higher throughput
+Advanced watchdog (Docker healthchecks)
 
 Multi-GPU scaling
 
-Automated snapshot selector
+Model batching/streaming
+
+Automated snapshot selection
 
 
+20. Conclusion
 
-21. Conclusion
+The entire Gonka deployment journey—from initial blockers in Block Sync (Stage 1) to a fully operational inference node with GPU integration (Stage 2)—is completed. The system is stable, secure, documented, and production-ready.
 
-The full Gonka deployment journey progressed from a blocked genesis-sync issue to a fully operational decentralized inference node architecture.
+This full report serves as a comprehensive blueprint for future operators and contributors within the decentralized ML ecosystem.
 
-Throughout Stage 1 and Stage 2:
 
-critical network-level blockers were solved
-
-a stable multi-node infrastructure was deployed
-
-GPU inference capability was established
-
-VPN-secured connectivity was implemented
-
-hardware was successfully registered on-chain
-
-The system is production-ready and awaiting epoch assignment, with automated recovery and stable performance across all components.
-
-This report serves as a long-form, technical, professional reference for future operators and developers working with decentralized inference networks.
