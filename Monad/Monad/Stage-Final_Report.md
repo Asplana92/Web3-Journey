@@ -127,6 +127,18 @@ Marks official completion of Monad Path to Rank S journey.
 Add Monad Stage Final Report (Monitoring & Automation)
 
 ---
+### New Tool Added — Monad RPC Health Checker (2025-11-20)
+
+A new shell-based RPC monitoring tool was created to verify the health of the
+Monad Testnet RPC endpoint. The tool checks endpoint responsiveness by sending
+two consecutive `eth_blockNumber` requests, compares block progression, and
+logs results to `/tmp/monad_rpc_health.log`.
+
+GitHub:
+https://github.com/Asplana92/Web3-Journey/tree/main/Monad/tools
+
+Public announcement (Discord):
+https://discord.com/channels/1263596865233096714/1343498072877043744/1441179093927333978
 
 ---
 
