@@ -122,3 +122,10 @@ Hardware: Registered
 Epoch Assignment: Pending (normal behavior)
 
 Architecture: Production-ready
+
+3. **Stage3-Migration-Failure-Report.md**
+
+   Analysis of failed model migration from Meta-Llama to Qwen2.5-7B-Instruct
+   - On-chain registration update failure
+   - API diff detection issues
+   - 5 epochs without assignments
