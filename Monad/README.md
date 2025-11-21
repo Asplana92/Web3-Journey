@@ -15,6 +15,11 @@ This directory contains my full Monad infrastructure journey, including testnet 
 A stable and fully monitored public Testnet RPC: https://monad.skandicescape.online
 
 
+### 📊 Reports
+- [Testnet → Mainnet Final Report](./Reports/Monad_Testnet_to_Mainnet_Final_Report.md) - Comprehensive 4-week infrastructure analysis
+- [Mainnet Preparation Checklist](./Reports/Mainnet_Preparation_Checklist.md) - Launch day guide
+
+
 
 ### **🔹 Public Grafana Dashboard**
 Live node & RPC monitoring dashboard:https://grafana.skandicescape.online
