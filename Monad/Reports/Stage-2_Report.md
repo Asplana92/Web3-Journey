@@ -1,4 +1,4 @@
-# 📊 Monad Path to Rank S — Stage 2 Report  
+# 📊 Monad Path to Rank S — Stage 2.1 Report  
 **Focus:** Monitoring & Automation with Prometheus + Grafana  
 **Author:** [Asplana92](https://github.com/Asplana92)  
 **Date:** October 26, 2025  
